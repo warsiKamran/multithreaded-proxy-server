@@ -249,6 +249,7 @@ int sendErrorMessage(int socket, int status_code){
 	return 1;
 }
 
+//the socketNew parameter is a pointer that holds the value of the client's socket descriptor. This socket descriptor (socketNew) is passed to each thread when a new client connection is accepted
 void *thread_fn(void *socketNew){
 
     sem_wait(&semaphore);
@@ -268,7 +269,7 @@ void *thread_fn(void *socketNew){
     char* buffer = (char*)calloc(MAX_BYTES, sizeof(char));
     bzero(buffer, MAX_BYTES);
 
-    //The received data is stored in buffer, and bytes_send_client holds the number of bytes received.
+    //The received data is stored in buffer, and bytes_send_client holds the number of bytes received from the client.
     bytes_send_client = recv(socket, buffer, MAX_BYTES, 0);
 
     //This loop continues to receive data until the end of the HTTP header is reached (indicated by \r\n\r\n).
