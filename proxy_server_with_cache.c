@@ -40,7 +40,7 @@ void removeCacheElement();
 int portNumber = 8080;
 int proxy_socketId;
 pthread_t tid[MAX_CLIENTS];
-sem_t semaphore;          //for sem_wait() and sem_signal();
+sem_t semaphore;          //for sem_wait() and sem_signal(), multiple threads can work at once.
 pthread_mutex_t lock;    // since there is one lru cache and multiple threads will access it due to which race condition can occur, therefore using lock
 
 cacheElement* head;
@@ -379,11 +379,21 @@ void *thread_fn(void *socketNew){
 
 //struct sockaddr is a generic structure used to store addresses for different types of network communications (like TCP, UDP, etc.) in the C programming language.
 //It is used with functions like bind(), connect(), and accept() in network programming to handle IP addresses and port numbers.
+
+//argc stands for "argument count".
+//It is an integer that represents the number of command-line arguments passed to the program, including the program name itself.
+//For example, if you run the command ./proxy 8080, argc will be 2 (one for ./proxy and one for 8080).
+
+//argv stands for "argument vector".
+//It is an array of C-strings (character pointers) that holds each command-line argument as a string.
+//argv[0] contains the program name ("./proxy" in the example above), and argv[1] would contain "8080".
+
 int main(int argc, char* argv[]){
 
     int client_socketId, clientLen;
     struct sockaddr_in server_addr, client_addr;
 
+    //initialising semaphore and lock
     sem_init(&semaphore, 0, MAX_CLIENTS);
     pthread_mutex_init(&lock, NULL);
 
@@ -447,7 +457,7 @@ int main(int argc, char* argv[]){
 
     printf("Binding on port%d\n", portNumber);
 
-    //setting up a server to accept incoming connection requests.
+    //setting up a server to accept incoming connection requests. by this our proxy server will start listening.
     int listenStatus = listen(proxy_socketId, MAX_CLIENTS);
 
     if(listenStatus < 0){
@@ -463,8 +473,8 @@ int main(int argc, char* argv[]){
     while(1){
 
         bzero((char *)&client_addr, sizeof(client_addr));
-
         clientLen = sizeof(client_addr);
+
         //This line waits for an incoming connection on the proxy_socketId. When a client connects, it creates a new socket (client_socketId) for that connection and fills in client_addr with the client's address information.
         client_socketId = accept(proxy_socketId, (struct sockaddr*)&client_addr, (socklen_t*)&clientLen);
 
@@ -489,7 +499,7 @@ int main(int argc, char* argv[]){
         printf("client's port number is %d and ip is %s\n", ntohs(client_addr.sin_port), str);
 
         //now all connections are accepted
-        // giving thread to opened socket
+        // giving thread to the opened socket
         //&tid[i]: A pointer to the thread identifier (pthread_t). This is where the thread ID will be stored. 
         //This is the argument that will be passed to the thread_fn. It’s cast to void* because threads can only accept a single pointer as an argument. Here, it’s passing the socket ID of the connected client so that the thread can use it to communicate with the client.
         pthread_create(&tid[i], NULL, thread_fn, (void*)&connected_socketId[i]);
