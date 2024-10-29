@@ -48,7 +48,7 @@ int cacheSize;
 
 int connectRemoteServer(char* host_addr, int portNumber){
 
-    //connecting with end server
+    //connecting with end server and opening socket for it
     int remoteSocket = socket(AF_INET, SOCK_STREAM, 0);
 
     if(remoteSocket < 0){
@@ -72,12 +72,14 @@ int connectRemoteServer(char* host_addr, int portNumber){
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(portNumber);
 
+    //We are copying the resolved IP address from the host (obtained via gethostbyname) into the server_addr structure to specify the destination for the socket connection. This step is essential because the connect function requires a full address (both IP and port) to establish a successful connection to the remote server.
+
     //Copies the first IP address from the h_addr_list (array of addresses) into server_addr.sin_addr.s_addr.
     //This sets the destination IP address for the socket connection.
     bcopy((char *)host->h_addr_list[0], (char *)&server_addr.sin_addr.s_addr, host->h_length);
 
     //Attempts to connect the socket (remoteSocket) to the server specified in server_addr.
-    if(connect(remoteSocket, (struct sockaddr *)&server_addr, (size_t)sizeof(server_addr) < 0)){
+    if(connect(remoteSocket, (struct sockaddr*)&server_addr, (size_t)sizeof(server_addr) < 0)){
         fprintf(stderr, "Error in connecting\n");
         return -1;
     }
@@ -126,7 +128,7 @@ int handle_request(int client_socketId,  struct ParsedRequest* request, char* te
         serverPort = atoi(request->port);
     }
 
-    //Calls connectRemoteServer to open a socket and connect to the remote server.
+    //Calls connectRemoteServer to open a socket and connect to the remote server(end server).
     // This establishes a network connection to request->host at serverPort, allowing the server to forward the client’s request to the remote host.
     int remoteSocketId = connectRemoteServer(request->host, serverPort);
 
@@ -529,6 +531,7 @@ cacheElement* findElement(char* url){
                 printf("LRU time track before %ld", site->lru_time_track);
                 printf("\n url found\n");
 
+                //update time
                 site->lru_time_track = time(NULL);
 
                 printf("LRU time track after %ld", site->lru_time_track);
@@ -597,14 +600,17 @@ int addCacheElement(char* data, int size, char* url){
     int totalSize = size + 1 + strlen(url) + sizeof(cacheElement);
 
     if(totalSize > MAX_ELEMENT_SIZE){
+
         tempLockValue = pthread_mutex_unlock(&lock);
-        printf("Add cache lock is unlocked");
+        printf("Add cache lock is unlocked and element cannot be added");
+
         return 0;
     }
 
     else{
 
         while(cacheSize + totalSize > MAX_SIZE){
+            //means our cache is full so remove one element
             removeCacheElement();
         }
 
@@ -632,4 +638,3 @@ int addCacheElement(char* data, int size, char* url){
     return 0;
 }
 
- 
