@@ -1,6 +1,7 @@
 # Multi-Threaded Proxy Server
 
-This project implements a multi-threaded proxy server in C, utilizing HTTP parsing methods inspired by this proxy server implementation.
+This project implements a multi-threaded proxy server in C, utilizing HTTP parsing methods inspired by [proxy-server](https://github.com/vaibhavnaagar/proxy-server)
+ implementation.
 
 ## Features
 
